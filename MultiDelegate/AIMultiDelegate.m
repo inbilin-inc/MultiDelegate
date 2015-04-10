@@ -25,7 +25,9 @@
 }
 
 - (void)addDelegate:(id)delegate {
-    [_delegates addPointer:(__bridge void*)delegate];
+    if ([self indexOfDelegate:delegate] == NSNotFound) {
+       [_delegates addPointer:(__bridge void*)delegate];
+    }
 }
 
 - (NSUInteger)indexOfDelegate:(id)delegate {
@@ -57,7 +59,6 @@
     NSUInteger index = [self indexOfDelegate:delegate];
     if (index != NSNotFound)
         [_delegates removePointerAtIndex:index];
-    [_delegates compact];
 }
 
 - (void)removeAllDelegates {
@@ -69,7 +70,8 @@
     if ([super respondsToSelector:selector])
         return YES;
     
-    for (id delegate in _delegates) {
+    NSPointerArray *tempDelegates = [_delegates copy];
+    for (id delegate in tempDelegates) {
         if (delegate && [delegate respondsToSelector:selector])
             return YES;
     }
@@ -82,13 +84,13 @@
     if (signature)
         return signature;
     
-    [_delegates compact];
     if (self.silentWhenEmpty && _delegates.count == 0) {
         // return any method signature, it doesn't really matter
         return [self methodSignatureForSelector:@selector(description)];
     }
     
-    for (id delegate in _delegates) {
+    NSPointerArray *tempDelegates = [_delegates copy];
+    for (id delegate in tempDelegates) {
         if (!delegate)
             continue;
 
@@ -104,7 +106,8 @@
     SEL selector = [invocation selector];
     BOOL responded = NO;
     
-    for (id delegate in _delegates) {
+    NSPointerArray *tempDelegates = [_delegates copy];
+    for (id delegate in tempDelegates) {
         if (delegate && [delegate respondsToSelector:selector]) {
             [invocation invokeWithTarget:delegate];
             responded = YES;
